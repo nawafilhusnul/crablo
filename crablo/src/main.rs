@@ -50,6 +50,11 @@ fn to_tile(sx: f32, sy: f32, cam: (f32, f32)) -> (usize, usize) {
     )
 }
 
+// calculate distance Manhattan distance
+fn dist(p1: (usize, usize), p2: (usize, usize)) -> i32 {
+    (p1.0 as i32 - p2.0 as i32).abs() + (p1.1 as i32 - p2.1 as i32).abs()
+}
+
 // Pathfinding algo
 fn bfs(
     map: &[[Tile; MAP]; MAP],
@@ -164,6 +169,7 @@ struct Game {
     player_cd: f32,
     monsters: Vec<Monster>,
     texts: Vec<DmgText>,
+    hp: i32,
 }
 
 impl Game {
@@ -210,12 +216,12 @@ impl Game {
                 },
             ],
             texts: vec![],
+            hp: 100,
         }
     }
 
     fn update(&mut self, dt: f32) -> bool {
-        // fake gaming logic
-        if is_key_pressed(KeyCode::Space) {
+        if self.hp <= 0 {
             return true;
         }
 
@@ -259,6 +265,46 @@ impl Game {
                     self.path.remove(0);
                     self.px = nx;
                     self.py = ny;
+                }
+            }
+        }
+
+        // Monster logic
+        // calculate the occupied spots so enemies dont stack
+        let occupied: Vec<_> = self
+            .monsters
+            .iter()
+            .map(|m| (m.x, m.y))
+            .chain(std::iter::once((self.px, self.py)))
+            .collect();
+
+        for i in 0..self.monsters.len() {
+            self.monsters[i].cd -= dt;
+            if self.monsters[i].cd <= 0. {
+                self.monsters[i].cd = 1.; // slow
+
+                let (mx, my) = (self.monsters[i].x, self.monsters[i].y);
+
+                let d = dist((mx, my), (self.px, self.py));
+
+                if d == 1 {
+                    self.hp -= 5;
+                    let (sx, sy) = to_screen(self.px, self.py, self.cam);
+
+                    self.texts.push(DmgText {
+                        x: sx,
+                        y: sy - 40.,
+                        dmg: 5,
+                        life: 1.,
+                    });
+                } else {
+                    // chase the player
+                    let path = bfs(&self.map, (mx, my), (self.px, self.py));
+
+                    if path.len() > 1 && !occupied.contains(&path[0]) {
+                        self.monsters[i].x = path[0].0;
+                        self.monsters[i].y = path[0].1;
+                    }
                 }
             }
         }
@@ -311,9 +357,19 @@ impl Game {
             draw_stickman(m.x, m.y, self.cam, true);
         }
 
+        // draw floating texts
         for t in &self.texts {
             draw_text(&format!("-{}", t.dmg), t.x, t.y, 20., RED);
         }
+
+        // draw HP text
+        draw_text(
+            &format!("HP: {}", self.hp),
+            20.,
+            screen_height() - 40.,
+            30.,
+            BLACK,
+        );
     }
 }
 
@@ -353,6 +409,9 @@ async fn main() {
                 );
 
                 draw_text("GAME OVER", 100., 100., 60., RED);
+
+                draw_text(&format!("HP: {}", game.hp), 100., 180., 30., BLACK);
+
                 draw_text("Enter to reset", 100., 150., 20., GRAY);
 
                 if is_key_pressed(KeyCode::Enter) {
