@@ -102,7 +102,7 @@ impl Game {
                     draw_wall(x, y, self.cam);
                 } else {
                     let (sx, sy) = to_screen(x, y, self.cam);
-                    draw_circle(sx, sy, 16., LIGHTGRAY);
+                    draw_circle(sx, sy+ 16.,2., LIGHTGRAY);
                 }
             }
         }
