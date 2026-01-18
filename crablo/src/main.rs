@@ -142,8 +142,12 @@ async fn main() {
                     if events.monster_killed {
                         audio.play_death();
                     }
+                    if events.floor_completed {
+                        audio.play_level_complete();
+                    }
 
                     if events.game_over {
+                        audio.play_game_over();
                         state = AppState::GameOver;
                     }
                 }

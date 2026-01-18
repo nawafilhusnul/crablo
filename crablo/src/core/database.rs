@@ -1,4 +1,5 @@
 use rusqlite::{Connection, Result};
+use std::path::PathBuf;
 
 pub struct ScoreEntry {
     pub rank: i32,
@@ -19,8 +20,20 @@ pub struct Database {
 }
 
 impl Database {
+    /// Get the database path - always next to the executable
+    fn db_path() -> PathBuf {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                return exe_dir.join("crablo_scores.db");
+            }
+        }
+        // Fallback to current directory
+        PathBuf::from("crablo_scores.db")
+    }
+
     pub fn new() -> Result<Self> {
-        let conn = Connection::open("crablo_scores.db")?;
+        let db_path = Self::db_path();
+        let conn = Connection::open(&db_path)?;
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS scores (

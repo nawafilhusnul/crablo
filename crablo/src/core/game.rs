@@ -17,6 +17,7 @@ pub struct GameEvents {
     pub monster_hit: bool,
     pub gold_collected: bool,
     pub monster_killed: bool,
+    pub floor_completed: bool,
     pub game_over: bool,
 }
 
@@ -298,6 +299,7 @@ impl Game {
         // All monsters dead - go to next floor
         if self.monsters.is_empty() {
             self.next_floor();
+            events.floor_completed = true;
             return events;
         }
 

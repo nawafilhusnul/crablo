@@ -105,7 +105,7 @@ The codebase follows clean architecture principles:
 
 ## License
 
-MIT License - feel free to use this code for your own projects!
+MIT License - feel free to use this code for your own projects.
 
 ---
 
